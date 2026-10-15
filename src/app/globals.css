@@ -1,26 +1,76 @@
 @import "tailwindcss";
 
+/* OnStep: blanco y negro como el logo; el verde solo para WhatsApp. */
 :root {
+  color-scheme: light;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111111;
+  --muted: #6b6b6b;
+  --line: #e7e7e7;
+  --soft: #f5f5f4;
+  --wa: #1fae55;
+  --wa-dark: #178a43;
+  --sale: #d0312d;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-soft: var(--soft);
+  --color-wa: var(--wa);
+  --color-wa-dark: var(--wa-dark);
+  --color-sale: var(--sale);
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-sheet { animation: sheet-in 0.22s ease-out; }
+.animate-fade { animation: fade-in 0.18s ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet, .animate-fade { animation: none; }
+  html { scroll-behavior: auto; }
+}
+
+/* Controles del panel admin */
+@layer components {
+  .input {
+    @apply h-12 w-full rounded-xl border border-line bg-white px-3.5 text-base outline-none transition focus:border-foreground;
+  }
+  .btn-primary {
+    @apply inline-flex h-11 items-center justify-center rounded-full bg-foreground px-5 font-semibold text-white transition hover:bg-black disabled:opacity-50;
+  }
+  .btn-secondary {
+    @apply inline-flex h-11 items-center justify-center rounded-full border border-line bg-white px-5 font-semibold transition hover:border-foreground disabled:opacity-50;
+  }
+  .photo-btn {
+    @apply grid h-7 min-w-7 place-items-center rounded-full bg-white/95 text-base font-bold shadow disabled:invisible;
+  }
 }
