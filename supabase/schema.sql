@@ -48,7 +48,7 @@ values (
   1,
   'OnStep',
   'Tenis 100% originales',
-  'Todos nuestros tenis son 100% originales. Mira el catálogo, elige tu talla y escríbenos por WhatsApp para hacer tu pedido.',
+  'Todos nuestros tenis son 100% originales. Busca tu talla, mira el catálogo y escríbenos por WhatsApp para hacer tu pedido.',
   '18295570987',
   'https://www.facebook.com/profile.php?id=61594960177917'
 )

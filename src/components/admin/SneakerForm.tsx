@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { getBrowserClient } from "@/lib/supabase";
 import type { Gender, Size, SizeSystem, Sneaker, Status } from "@/lib/types";
-import { SIZE_SYSTEMS, sortSizes, suggestSize } from "@/lib/utils";
+import { OFFERS_ENABLED, SIZE_SYSTEMS, sortSizes, suggestSize } from "@/lib/utils";
 import { deletePhotos, uploadPhoto } from "./storage";
 import { Card, Field } from "./ui";
 
@@ -107,10 +107,11 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
     setError("");
 
     const p = Number(price);
-    const sp = salePrice.trim() ? Number(salePrice) : null;
+    // Con las ofertas apagadas no se toca el precio de oferta que ya estuviera guardado.
+    const sp = OFFERS_ENABLED ? (salePrice.trim() ? Number(salePrice) : null) : (initial?.sale_price ?? null);
     if (!name.trim() || !brand.trim()) return setError("Pon el nombre y la marca.");
     if (!Number.isFinite(p) || p <= 0) return setError("El precio debe ser un número mayor que 0.");
-    if (sp != null && (!Number.isFinite(sp) || sp <= 0 || sp >= p))
+    if (OFFERS_ENABLED && sp != null && (!Number.isFinite(sp) || sp <= 0 || sp >= p))
       return setError("El precio de oferta debe ser menor que el precio normal (o déjalo vacío).");
     if (!images.length) return setError("Sube al menos una foto.");
     if (uploading) return setError("Espera a que terminen de subir las fotos.");
@@ -221,9 +222,11 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
           <Field label="Precio (RD$)">
             <input inputMode="numeric" required value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="7500" className="input" />
           </Field>
-          <Field label="Precio de oferta (opcional)" hint="Si lo pones, se muestra tachado el precio normal.">
-            <input inputMode="numeric" value={salePrice} onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="—" className="input" />
-          </Field>
+          {OFFERS_ENABLED && (
+            <Field label="Precio de oferta (opcional)" hint="Si lo pones, se muestra tachado el precio normal.">
+              <input inputMode="numeric" value={salePrice} onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="—" className="input" />
+            </Field>
+          )}
           <Field label="Para">
             <select value={gender} onChange={(e) => setGender(e.target.value as Gender)} className="input">
               <option value="hombre">Hombre</option>

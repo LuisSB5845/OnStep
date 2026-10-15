@@ -13,12 +13,19 @@ export function formatPrice(value: number): string {
   return money.format(value).replace(/^DOP\s?/, "RD$").replace(/^RD\$\s/, "RD$");
 }
 
+/**
+ * Precios de oferta: apagados por ahora. La columna `sale_price` sigue en la base de datos
+ * y en el código; para activarlos, pon `true` aquí y vuelve a publicar. Con `false` no se
+ * muestra el campo en el admin ni el precio tachado en la página.
+ */
+export const OFFERS_ENABLED = false;
+
 export function finalPrice(s: Pick<Sneaker, "price" | "sale_price">): number {
-  return s.sale_price != null && s.sale_price < s.price ? s.sale_price : s.price;
+  return hasDiscount(s) ? s.sale_price! : s.price;
 }
 
 export function hasDiscount(s: Pick<Sneaker, "price" | "sale_price">): boolean {
-  return s.sale_price != null && s.sale_price < s.price;
+  return OFFERS_ENABLED && s.sale_price != null && s.sale_price < s.price;
 }
 
 /* ---------- WhatsApp ---------- */
@@ -38,7 +45,7 @@ export function orderMessage(s: Sneaker, size: Size | null, pageUrl: string): st
     `Hola OnStep 👋 Me interesan estos tenis:`,
     ``,
     `👟 ${s.brand} ${s.name}`,
-    size ? `📏 Talla: US ${size.us} · EU ${size.eu} · UK ${size.uk} · ${size.cm} cm` : `📏 Talla: (por confirmar)`,
+    size ? `📏 Talla: ${fullSizeLabel(size)}` : `📏 Talla: (por confirmar)`,
     `💵 Precio: ${formatPrice(finalPrice(s))}`,
   ];
   if (pageUrl) lines.push(``, pageUrl);
@@ -54,10 +61,28 @@ export const SIZE_SYSTEMS: { key: SizeSystem; label: string }[] = [
   { key: "cm", label: "CM" },
 ];
 
-export function sizeLabel(size: Size, system: SizeSystem): string {
-  const v = size[system];
-  if (!v) return "—";
-  return system === "cm" ? `${v} cm` : v;
+/** "US 9 · EU 42.5 · UK 8 · 27 cm" (omite los sistemas vacíos). */
+export function fullSizeLabel(size: Size): string {
+  return SIZE_SYSTEMS.filter((sys) => size[sys.key])
+    .map((sys) => (sys.key === "cm" ? `${size.cm} cm` : `${sys.label} ${size[sys.key]}`))
+    .join(" · ");
+}
+
+/** "11", "11.0", "11,5" -> número; vacío o texto -> null. */
+function parseSize(t: string): number | null {
+  const n = parseFloat(t.trim().replace(",", "."));
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * ¿La talla que escribió el cliente coincide con esta? Con números de 30 en adelante se
+ * entiende que es europea (42, 44.5); por debajo, americana (9, 11).
+ */
+export function matchesSize(size: Size, typed: string): boolean {
+  const n = parseSize(typed);
+  if (n == null) return false;
+  const value = parseSize(n >= 30 ? size.eu : size.us);
+  return value === n;
 }
 
 // Tablas de referencia (estándar Nike/Jordan). Se usan solo para autocompletar

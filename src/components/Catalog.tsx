@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { Business, SizeSystem, Sneaker } from "@/lib/types";
+import type { Business, Sneaker } from "@/lib/types";
 import {
+  availableSizes,
   finalPrice,
   formatPrice,
   hasDiscount,
   isSoldOut,
+  matchesSize,
   normalizeText,
+  sortSizes,
   whatsappLink,
 } from "@/lib/utils";
 import ProductSheet from "./ProductSheet";
@@ -27,7 +30,6 @@ export default function Catalog({ business, sneakers, demo }: Props) {
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("Todas");
   const [size, setSize] = useState("");
-  const [system, setSystem] = useState<SizeSystem>("us");
   const [openId, setOpenId] = useState<string | null>(null);
 
   const brands = useMemo(
@@ -35,17 +37,11 @@ export default function Catalog({ business, sneakers, demo }: Props) {
     [sneakers],
   );
 
-  const allSizes = useMemo(() => {
-    const set = new Set<string>();
-    sneakers.forEach((s) => s.sizes.forEach((z) => z.available && set.add(z.us)));
-    return Array.from(set).sort((a, b) => parseFloat(a) - parseFloat(b));
-  }, [sneakers]);
-
   const visible = useMemo(() => {
     const q = normalizeText(query.trim());
     return sneakers
       .filter((s) => brand === "Todas" || s.brand === brand)
-      .filter((s) => !size || s.sizes.some((z) => z.us === size && z.available))
+      .filter((s) => !size.trim() || availableSizes(s).some((z) => matchesSize(z, size)))
       .filter((s) => !q || normalizeText(`${s.brand} ${s.name}`).includes(q))
       .sort((a, b) => Number(isSoldOut(a)) - Number(isSoldOut(b)));
   }, [sneakers, brand, size, query]);
@@ -120,7 +116,7 @@ export default function Catalog({ business, sneakers, demo }: Props) {
           {business.about && <p className="mt-3 max-w-xl text-base text-muted sm:text-lg">{business.about}</p>}
 
           <ol className="mt-6 grid grid-cols-3 gap-2 text-center text-xs sm:max-w-xl sm:text-sm">
-            {["Elige tus tenis", "Escoge tu talla", "Pide por WhatsApp"].map((t, i) => (
+            {["Busca tu talla", "Elige tus tenis", "Pide por WhatsApp"].map((t, i) => (
               <li key={t} className="rounded-2xl bg-soft px-2 py-3">
                 <span className="mx-auto mb-1 grid size-7 place-items-center rounded-full bg-foreground text-sm font-bold text-white">
                   {i + 1}
@@ -146,23 +142,19 @@ export default function Catalog({ business, sneakers, demo }: Props) {
                   className="h-12 w-full rounded-2xl border border-line bg-white pl-11 pr-4 text-base outline-none focus:border-foreground"
                 />
               </label>
-              <label className="relative">
-                <span className="sr-only">Mi talla (US)</span>
-                <select
+              <label className="relative w-32 shrink-0">
+                <span className="sr-only">Tu talla (US o EU)</span>
+                <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-muted">
+                  Talla
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
                   value={size}
-                  onChange={(e) => setSize(e.target.value)}
-                  className={`h-12 appearance-none rounded-2xl border bg-white pl-4 pr-9 text-base font-medium outline-none focus:border-foreground ${size ? "border-foreground" : "border-line"}`}
-                >
-                  <option value="">Mi talla</option>
-                  {allSizes.map((s) => (
-                    <option key={s} value={s}>
-                      US {s}
-                    </option>
-                  ))}
-                </select>
-                <svg viewBox="0 0 24 24" className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
+                  onChange={(e) => setSize(e.target.value.replace(/[^\d.,]/g, "").slice(0, 4))}
+                  placeholder="11"
+                  className={`h-12 w-full rounded-2xl border bg-white pl-[3.75rem] pr-3 text-base font-semibold outline-none focus:border-foreground ${size ? "border-foreground" : "border-line"}`}
+                />
               </label>
             </div>
 
@@ -186,6 +178,7 @@ export default function Catalog({ business, sneakers, demo }: Props) {
 
           <p className="mb-3 mt-2 text-sm text-muted">
             {visible.length === 1 ? "1 modelo" : `${visible.length} modelos`}
+            {size.trim() && ` en talla ${size.trim()}`}
           </p>
 
           {visible.length === 0 ? (
@@ -275,9 +268,7 @@ export default function Catalog({ business, sneakers, demo }: Props) {
           key={open.id}
           sneaker={open}
           whatsapp={business.whatsapp}
-          system={system}
-          onSystemChange={setSystem}
-          preferredUs={size}
+          typedSize={size}
           onClose={close}
         />
       )}
@@ -315,6 +306,11 @@ function ProductCard({ sneaker: s, onOpen }: { sneaker: Sneaker; onOpen: () => v
       </div>
       <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted">{s.brand}</p>
       <p className="line-clamp-2 font-semibold leading-snug">{s.name}</p>
+      {!soldOut && (
+        <p className="mt-0.5 text-sm text-muted">
+          Talla {sortSizes(availableSizes(s)).map((z) => z.us).join(", ")} US
+        </p>
+      )}
       <p className="mt-0.5 flex items-baseline gap-1.5">
         <span className={`font-bold ${hasDiscount(s) ? "text-sale" : ""}`}>{formatPrice(finalPrice(s))}</span>
         {hasDiscount(s) && <span className="text-sm text-muted line-through">{formatPrice(s.price)}</span>}

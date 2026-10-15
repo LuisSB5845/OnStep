@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "OnStep · Tenis 100% originales",
   description:
-    "Catálogo de tenis 100% originales. Elige tu modelo y talla, y haz tu pedido por WhatsApp.",
+    "Catálogo de tenis 100% originales. Busca tu talla, elige tus tenis y haz tu pedido por WhatsApp.",
   openGraph: {
     title: "OnStep · Tenis 100% originales",
     description: "Mira el catálogo y pide por WhatsApp.",

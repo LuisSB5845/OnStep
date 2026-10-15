@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { Size, SizeSystem, Sneaker } from "@/lib/types";
+import type { Sneaker } from "@/lib/types";
 import {
-  SIZE_SYSTEMS,
+  availableSizes,
   finalPrice,
   formatPrice,
+  fullSizeLabel,
   hasDiscount,
   isSoldOut,
+  matchesSize,
   orderMessage,
-  sizeLabel,
   sortSizes,
   whatsappLink,
 } from "@/lib/utils";
@@ -18,18 +19,16 @@ import { CheckBadgeIcon, ChevronIcon, CloseIcon, WhatsAppIcon } from "./icons";
 type Props = {
   sneaker: Sneaker;
   whatsapp: string;
-  system: SizeSystem;
-  onSystemChange: (s: SizeSystem) => void;
-  preferredUs: string;
+  /** La talla que el cliente escribió en el buscador (puede estar vacía). */
+  typedSize: string;
   onClose: () => void;
 };
 
-export default function ProductSheet({ sneaker, whatsapp, system, onSystemChange, preferredUs, onClose }: Props) {
-  const sizes = sortSizes(sneaker.sizes);
+export default function ProductSheet({ sneaker, whatsapp, typedSize, onClose }: Props) {
+  const sizes = sortSizes(availableSizes(sneaker));
   const soldOut = isSoldOut(sneaker);
-  const [selected, setSelected] = useState<Size | null>(
-    () => sizes.find((s) => s.us === preferredUs && s.available) ?? null,
-  );
+  // La talla del pedido sale sola: la que buscó el cliente o, si el tenis tiene una sola, esa.
+  const orderSize = sizes.find((s) => matchesSize(s, typedSize)) ?? (sizes.length === 1 ? sizes[0] : null);
   const [photo, setPhoto] = useState(0);
   const closeRef = useRef<HTMLButtonElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -62,7 +61,7 @@ export default function ProductSheet({ sneaker, whatsapp, system, onSystemChange
   const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/#t=${sneaker.id}` : "";
   const message = soldOut
     ? `Hola OnStep 👋 ¿Les vuelven a llegar los ${sneaker.brand} ${sneaker.name}?\n\n${pageUrl}`
-    : orderMessage(sneaker, selected, pageUrl);
+    : orderMessage(sneaker, orderSize, pageUrl);
   const images = sneaker.images.length ? sneaker.images : [""];
 
   return (
@@ -167,51 +166,18 @@ export default function ProductSheet({ sneaker, whatsapp, system, onSystemChange
               </p>
             ) : (
               <div>
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="font-semibold">Elige tu talla</h3>
-                  <div role="radiogroup" aria-label="Sistema de tallas" className="flex rounded-full bg-soft p-1 text-xs font-semibold">
-                    {SIZE_SYSTEMS.map((s) => (
-                      <button
-                        key={s.key}
-                        role="radio"
-                        aria-checked={system === s.key}
-                        onClick={() => onSystemChange(s.key)}
-                        className={`rounded-full px-2.5 py-1 ${system === s.key ? "bg-white shadow-sm" : "text-muted"}`}
-                      >
-                        {s.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  {sizes.map((s) => {
-                    const active = selected?.us === s.us;
-                    return (
-                      <button
-                        key={s.us}
-                        disabled={!s.available}
-                        onClick={() => setSelected(active ? null : s)}
-                        aria-pressed={active}
-                        className={`h-12 rounded-xl border text-sm font-semibold transition ${
-                          !s.available
-                            ? "cursor-not-allowed border-line text-muted/50 line-through"
-                            : active
-                              ? "border-foreground bg-foreground text-white"
-                              : "border-line hover:border-foreground"
-                        }`}
-                      >
-                        {sizeLabel(s, system)}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {selected && (
-                  <p className="mt-3 text-sm text-muted">
-                    Talla elegida: US {selected.us} · EU {selected.eu} · UK {selected.uk} · {selected.cm} cm
-                  </p>
-                )}
+                <h3 className="font-semibold">{sizes.length === 1 ? "Talla" : "Tallas disponibles"}</h3>
+                <ul className="mt-2 space-y-2">
+                  {sizes.map((z) => (
+                    <li
+                      key={z.us}
+                      className={`rounded-xl border px-4 py-3 ${orderSize?.us === z.us ? "border-foreground" : "border-line"}`}
+                    >
+                      <span className="text-lg font-bold">US {z.us}</span>
+                      <span className="ml-2 text-sm text-muted">{fullSizeLabel({ ...z, us: "" })}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 
@@ -232,8 +198,8 @@ export default function ProductSheet({ sneaker, whatsapp, system, onSystemChange
             <WhatsAppIcon className="size-6" />
             {soldOut ? "Preguntar por WhatsApp" : "Pedir por WhatsApp"}
           </a>
-          {!soldOut && !selected && (
-            <p className="mt-2 text-center text-xs text-muted">Puedes elegir tu talla arriba o preguntarla por WhatsApp.</p>
+          {!soldOut && !orderSize && (
+            <p className="mt-2 text-center text-xs text-muted">Dinos tu talla por WhatsApp.</p>
           )}
         </div>
       </div>
