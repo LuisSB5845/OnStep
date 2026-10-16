@@ -14,11 +14,10 @@ export function formatPrice(value: number): string {
 }
 
 /**
- * Precios de oferta: apagados por ahora. La columna `sale_price` sigue en la base de datos
- * y en el código; para activarlos, pon `true` aquí y vuelve a publicar. Con `false` no se
- * muestra el campo en el admin ni el precio tachado en la página.
+ * Interruptor general de ofertas. Cada tenis se pone en oferta con la casilla "En oferta"
+ * del admin; con `false` se ocultan todas (la casilla y el precio tachado) sin borrar nada.
  */
-export const OFFERS_ENABLED = false;
+export const OFFERS_ENABLED = true;
 
 export function finalPrice(s: Pick<Sneaker, "price" | "sale_price">): number {
   return hasDiscount(s) ? s.sale_price! : s.price;
@@ -26,6 +25,11 @@ export function finalPrice(s: Pick<Sneaker, "price" | "sale_price">): number {
 
 export function hasDiscount(s: Pick<Sneaker, "price" | "sale_price">): boolean {
   return OFFERS_ENABLED && s.sale_price != null && s.sale_price < s.price;
+}
+
+/** "Brooks Catamount", o solo "Brooks" si no se escribió el modelo. */
+export function sneakerTitle(s: Pick<Sneaker, "brand" | "name">): string {
+  return [s.brand, s.name].map((t) => t.trim()).filter(Boolean).join(" ");
 }
 
 /* ---------- WhatsApp ---------- */
@@ -44,7 +48,7 @@ export function orderMessage(s: Sneaker, size: Size | null, pageUrl: string): st
   const lines = [
     `Hola OnStep 👋 Me interesan estos tenis:`,
     ``,
-    `👟 ${s.brand} ${s.name}`,
+    `👟 ${sneakerTitle(s)}`,
     size ? `📏 Talla: ${fullSizeLabel(size)}` : `📏 Talla: (por confirmar)`,
     `💵 Precio: ${formatPrice(finalPrice(s))}`,
   ];

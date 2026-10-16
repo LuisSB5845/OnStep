@@ -5,7 +5,7 @@ import type { Session } from "@supabase/supabase-js";
 import { refreshCatalog } from "@/app/actions";
 import { getBrowserClient, isConfigured } from "@/lib/supabase";
 import type { Sneaker, Status } from "@/lib/types";
-import { finalPrice, formatPrice, normalizeText } from "@/lib/utils";
+import { finalPrice, formatPrice, normalizeText, sneakerTitle } from "@/lib/utils";
 import { SearchIcon } from "../icons";
 import { deletePhotos, toSneaker } from "./storage";
 import SneakerForm from "./SneakerForm";
@@ -164,7 +164,7 @@ function Dashboard({ session }: { session: Session }) {
   };
 
   const remove = async (s: Sneaker) => {
-    if (!window.confirm(`¿Borrar "${s.brand} ${s.name}"? Esto no se puede deshacer.`)) return;
+    if (!window.confirm(`¿Borrar "${sneakerTitle(s)}"? Esto no se puede deshacer.`)) return;
     const { error } = await supabase.from("sneakers").delete().eq("id", s.id);
     if (error) {
       notify("No se pudo borrar");
@@ -176,7 +176,7 @@ function Dashboard({ session }: { session: Session }) {
 
   const visible = useMemo(() => {
     const q = normalizeText(query.trim());
-    return q ? items.filter((s) => normalizeText(`${s.brand} ${s.name}`).includes(q)) : items;
+    return q ? items.filter((s) => normalizeText(sneakerTitle(s)).includes(q)) : items;
   }, [items, query]);
 
   const count = (st: Status) => items.filter((s) => s.status === st).length;
@@ -276,7 +276,7 @@ function Dashboard({ session }: { session: Session }) {
                       <div className="min-w-0">
                         <p className="truncate font-semibold">
                           {s.featured && <span title="Destacado">★ </span>}
-                          {s.brand} {s.name}
+                          {sneakerTitle(s)}
                         </p>
                         <p className="text-sm text-muted">
                           {formatPrice(finalPrice(s))} · {s.sizes.filter((z) => z.available).length} tallas
@@ -301,7 +301,7 @@ function Dashboard({ session }: { session: Session }) {
                     </select>
                     <button
                       onClick={() => remove(s)}
-                      aria-label={`Borrar ${s.name}`}
+                      aria-label={`Borrar ${sneakerTitle(s)}`}
                       className="grid size-9 shrink-0 place-items-center rounded-full text-muted hover:bg-red-50 hover:text-sale"
                     >
                       <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">

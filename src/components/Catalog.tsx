@@ -10,6 +10,7 @@ import {
   isSoldOut,
   matchesSize,
   normalizeText,
+  sneakerTitle,
   sortSizes,
   whatsappLink,
 } from "@/lib/utils";
@@ -42,7 +43,7 @@ export default function Catalog({ business, sneakers, demo }: Props) {
     return sneakers
       .filter((s) => brand === "Todas" || s.brand === brand)
       .filter((s) => !size.trim() || availableSizes(s).some((z) => matchesSize(z, size)))
-      .filter((s) => !q || normalizeText(`${s.brand} ${s.name}`).includes(q))
+      .filter((s) => !q || normalizeText(sneakerTitle(s)).includes(q))
       .sort((a, b) => Number(isSoldOut(a)) - Number(isSoldOut(b)));
   }, [sneakers, brand, size, query]);
 
@@ -291,7 +292,7 @@ function ProductCard({ sneaker: s, onOpen }: { sneaker: Sneaker; onOpen: () => v
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={cover}
-            alt={`${s.brand} ${s.name}`}
+            alt={sneakerTitle(s)}
             loading="lazy"
             className={`size-full object-cover transition duration-300 group-hover:scale-[1.03] ${soldOut ? "opacity-50 grayscale" : ""}`}
           />
@@ -304,8 +305,14 @@ function ProductCard({ sneaker: s, onOpen }: { sneaker: Sneaker; onOpen: () => v
           <span className="absolute left-2 top-2 rounded-full bg-sale px-2.5 py-1 text-xs font-bold text-white">Oferta</span>
         ) : null}
       </div>
-      <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted">{s.brand}</p>
-      <p className="line-clamp-2 font-semibold leading-snug">{s.name}</p>
+      {s.name.trim() ? (
+        <>
+          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-muted">{s.brand}</p>
+          <p className="line-clamp-2 font-semibold leading-snug">{s.name}</p>
+        </>
+      ) : (
+        <p className="mt-2 line-clamp-2 font-semibold leading-snug">{s.brand}</p>
+      )}
       {!soldOut && (
         <p className="mt-0.5 text-sm text-muted">
           Talla {sortSizes(availableSizes(s)).map((z) => z.us).join(", ")} US

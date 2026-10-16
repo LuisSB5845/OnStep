@@ -42,9 +42,17 @@ export default function BusinessForm({ onCancel, onSaved }: Props) {
     if (phone.length < 10) return setError("Revisa el número de WhatsApp.");
     setSaving(true);
     const row = Object.fromEntries(FIELDS.map((f) => [f.key, String(form[f.key] ?? "").trim()]));
-    const { error } = await supabase.from("business").upsert({ id: 1, ...row, whatsapp: phone });
+    // update y no upsert: la tabla solo deja EDITAR a los admins (no insertar), y un upsert
+    // intenta insertar primero, así que Supabase lo rechazaba siempre.
+    const { data, error } = await supabase
+      .from("business")
+      .update({ ...row, whatsapp: phone })
+      .eq("id", 1)
+      .select("id");
     setSaving(false);
     if (error) return setError(`No se pudo guardar: ${error.message}`);
+    // Sin permiso, Supabase no da error: simplemente no cambia ninguna fila.
+    if (!data?.length) return setError("No se pudo guardar: tu usuario no tiene permiso de admin.");
     onSaved();
   };
 

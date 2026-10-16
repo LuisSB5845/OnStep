@@ -11,6 +11,7 @@ import {
   isSoldOut,
   matchesSize,
   orderMessage,
+  sneakerTitle,
   sortSizes,
   whatsappLink,
 } from "@/lib/utils";
@@ -60,7 +61,7 @@ export default function ProductSheet({ sneaker, whatsapp, typedSize, onClose }: 
 
   const pageUrl = typeof window !== "undefined" ? `${window.location.origin}/#t=${sneaker.id}` : "";
   const message = soldOut
-    ? `Hola OnStep 👋 ¿Les vuelven a llegar los ${sneaker.brand} ${sneaker.name}?\n\n${pageUrl}`
+    ? `Hola OnStep 👋 ¿Les vuelven a llegar los ${sneakerTitle(sneaker)}?\n\n${pageUrl}`
     : orderMessage(sneaker, orderSize, pageUrl);
   const images = sneaker.images.length ? sneaker.images : [""];
 
@@ -99,7 +100,7 @@ export default function ProductSheet({ sneaker, whatsapp, typedSize, onClose }: 
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={src}
-                      alt={`${sneaker.brand} ${sneaker.name} — foto ${i + 1}`}
+                      alt={`${sneakerTitle(sneaker)} — foto ${i + 1}`}
                       className="size-full object-cover"
                       draggable={false}
                     />
@@ -143,9 +144,11 @@ export default function ProductSheet({ sneaker, whatsapp, typedSize, onClose }: 
           {/* Detalles */}
           <div className="flex flex-col gap-5 p-5 sm:p-7">
             <div>
-              <p className="text-sm font-medium uppercase tracking-wide text-muted">{sneaker.brand}</p>
+              {sneaker.name.trim() && (
+                <p className="text-sm font-medium uppercase tracking-wide text-muted">{sneaker.brand}</p>
+              )}
               <h2 id="sheet-title" className="mt-0.5 text-2xl font-bold leading-tight">
-                {sneaker.name}
+                {sneaker.name.trim() || sneaker.brand}
               </h2>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className={`text-2xl font-bold ${hasDiscount(sneaker) ? "text-sale" : ""}`}>

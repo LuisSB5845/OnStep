@@ -15,6 +15,8 @@ type Props = {
 };
 
 const COMMON_BRANDS = ["Nike", "Jordan", "Adidas", "New Balance", "Puma", "Asics", "Converse", "Vans", "Reebok", "On"];
+// Texto con el que arranca "Características" en cada tenis nuevo; el dueño lo cambia o borra.
+const DEFAULT_DESCRIPTION = "Usado en perfectas condiciones, 100% original";
 const QUICK_US = ["6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5", "12", "13"];
 
 export default function SneakerForm({ initial, brands, onCancel, onSaved }: Props) {
@@ -24,11 +26,12 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
   const [name, setName] = useState(initial?.name ?? "");
   const [brand, setBrand] = useState(initial?.brand ?? "");
   const [price, setPrice] = useState(initial ? String(initial.price) : "");
+  const [onSale, setOnSale] = useState(initial?.sale_price != null);
   const [salePrice, setSalePrice] = useState(initial?.sale_price != null ? String(initial.sale_price) : "");
   const [gender, setGender] = useState<Gender>(initial?.gender ?? "hombre");
   const [status, setStatus] = useState<Status>(initial?.status ?? "disponible");
   const [featured, setFeatured] = useState(initial?.featured ?? false);
-  const [description, setDescription] = useState(initial?.description ?? "");
+  const [description, setDescription] = useState(initial ? initial.description : DEFAULT_DESCRIPTION);
   const [sizes, setSizes] = useState<Size[]>(sortSizes(initial?.sizes ?? []));
   const [images, setImages] = useState<string[]>(initial?.images ?? []);
 
@@ -107,12 +110,12 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
     setError("");
 
     const p = Number(price);
-    // Con las ofertas apagadas no se toca el precio de oferta que ya estuviera guardado.
-    const sp = OFFERS_ENABLED ? (salePrice.trim() ? Number(salePrice) : null) : (initial?.sale_price ?? null);
-    if (!name.trim() || !brand.trim()) return setError("Pon el nombre y la marca.");
+    // Sin la casilla "En oferta" marcada, el tenis no tiene oferta (se borra si tenía una).
+    const sp = OFFERS_ENABLED && onSale ? Number(salePrice) : null;
+    if (!brand.trim()) return setError("Pon la marca.");
     if (!Number.isFinite(p) || p <= 0) return setError("El precio debe ser un número mayor que 0.");
-    if (OFFERS_ENABLED && sp != null && (!Number.isFinite(sp) || sp <= 0 || sp >= p))
-      return setError("El precio de oferta debe ser menor que el precio normal (o déjalo vacío).");
+    if (sp != null && (!salePrice.trim() || !Number.isFinite(sp) || sp <= 0 || sp >= p))
+      return setError("Escribe el precio de oferta: tiene que ser menor que el precio normal.");
     if (!images.length) return setError("Sube al menos una foto.");
     if (uploading) return setError("Espera a que terminen de subir las fotos.");
 
@@ -216,16 +219,24 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
               ))}
             </datalist>
           </Field>
-          <Field label="Modelo">
-            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Air Jordan 4 Black Cat" className="input" />
+          <Field label="Modelo (opcional)" hint="Si lo dejas vacío, el tenis se muestra solo con la marca.">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Air Jordan 4 Black Cat" className="input" />
           </Field>
           <Field label="Precio (RD$)">
             <input inputMode="numeric" required value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="7500" className="input" />
           </Field>
           {OFFERS_ENABLED && (
-            <Field label="Precio de oferta (opcional)" hint="Si lo pones, se muestra tachado el precio normal.">
-              <input inputMode="numeric" value={salePrice} onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="—" className="input" />
-            </Field>
+            <div className="space-y-3">
+              <label className="flex h-11 items-center gap-3">
+                <input type="checkbox" checked={onSale} onChange={(e) => setOnSale(e.target.checked)} className="size-5 accent-foreground" />
+                <span className="text-sm font-semibold">🏷️ En oferta</span>
+              </label>
+              {onSale && (
+                <Field label="Precio de oferta (RD$)" hint="Se muestra en rojo y el precio normal sale tachado.">
+                  <input inputMode="numeric" required autoFocus value={salePrice} onChange={(e) => setSalePrice(e.target.value.replace(/[^\d.]/g, ""))} placeholder="6500" className="input" />
+                </Field>
+              )}
+            </div>
           )}
           <Field label="Para">
             <select value={gender} onChange={(e) => setGender(e.target.value as Gender)} className="input">
@@ -248,7 +259,6 @@ export default function SneakerForm({ initial, brands, onCancel, onSaved }: Prop
             rows={4}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder={"Color: Negro / Blanco\nNuevos en su caja original"}
             className="input h-auto py-3"
           />
         </Field>
